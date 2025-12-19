@@ -491,7 +491,82 @@ curl -X POST http://82.29.54.80:8100/gemini/v1beta/models/gemini-3-pro-image-pre
 
 > **重要提示**: 语音功能需要使用 Google AI 官方 API Key（非 Cookie 方式）
 
-### Python SDK 调用（推荐）
+### OpenAI 兼容接口（推荐）⭐
+
+**端点**: `POST /v1/audio/speech`
+
+这是标准的 OpenAI TTS 接口，可以直接对接 new-api 等网关。
+
+**请求示例**:
+```bash
+curl -X POST http://82.29.54.80:8100/v1/audio/speech \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "tts-1",
+    "input": "Hello, this is a test. 你好，这是测试。"
+  }' \
+  --output speech.wav
+```
+
+**请求参数**:
+
+| 参数 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `model` | string | 是 | `tts-1`（快速）或 `tts-1-hd`（高质量） |
+| `input` | string | 是 | 要转换的文本（推荐5000字符以内） |
+| `voice` | string | 否 | 音色（暂不支持，保留兼容性） |
+| `response_format` | string | 否 | 音频格式（暂仅支持 wav） |
+| `speed` | float | 否 | 语速（暂不支持） |
+
+**模型映射**:
+- `tts-1` → `gemini-2.5-flash-preview-tts`（快速，推荐）
+- `tts-1-hd` → `gemini-2.5-pro-preview-tts`（高质量）
+
+**响应格式**:
+- 返回二进制音频数据（WAV格式，PCM 24kHz 16bit mono）
+- Content-Type: `audio/wav`
+
+**Python 示例（OpenAI 兼容）**:
+```python
+import requests
+
+response = requests.post(
+    "http://82.29.54.80:8100/v1/audio/speech",
+    json={
+        "model": "tts-1",
+        "input": "你好，世界！Hello World!"
+    }
+)
+
+# 保存音频
+with open("speech.wav", "wb") as f:
+    f.write(response.content)
+
+print(f"✅ 音频已保存，大小: {len(response.content)} bytes")
+```
+
+**JavaScript 示例**:
+```javascript
+const response = await fetch('http://82.29.54.80:8100/v1/audio/speech', {
+  method: 'POST',
+  headers: {'Content-Type': 'application/json'},
+  body: JSON.stringify({
+    model: 'tts-1',
+    input: 'Hello, this is a test!'
+  })
+});
+
+const audioBlob = await response.blob();
+const audioUrl = URL.createObjectURL(audioBlob);
+
+// 播放音频
+const audio = new Audio(audioUrl);
+audio.play();
+```
+
+---
+
+### Python SDK 调用（高级）
 
 **安装依赖**:
 ```bash
