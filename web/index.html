@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini API 控制台</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0f0f23;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        #app {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(66,133,244,0.3);
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .header p {
+            margin: 0;
+            opacity: 0.9;
+        }
+        .card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            border: 1px solid #2a2a4a;
+        }
+        .card h2 {
+            margin: 0 0 20px 0;
+            font-size: 20px;
+            color: #4285f4;
+            border-bottom: 2px solid #4285f4;
+            padding-bottom: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .status-valid {
+            background: rgba(52, 168, 83, 0.2);
+            color: #34a853;
+            border: 1px solid #34a853;
+        }
+        .status-invalid {
+            background: rgba(234, 67, 53, 0.2);
+            color: #ea4335;
+            border: 1px solid #ea4335;
+        }
+        .status-unknown {
+            background: rgba(251, 188, 4, 0.2);
+            color: #fbbc04;
+            border: 1px solid #fbbc04;
+        }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #3a3a5a;
+            border-radius: 8px;
+            font-size: 14px;
+            background: #0f0f23;
+            color: #e0e0e0;
+            font-family: 'Monaco', 'Menlo', monospace;
+        }
+        .form-textarea {
+            min-height: 80px;
+            resize: vertical;
+            font-size: 13px;
+        }
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #4285f4;
+            box-shadow: 0 0 0 3px rgba(66,133,244,0.2);
+        }
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary {
+            background: #4285f4;
+            color: white;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #3367d6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(66,133,244,0.4);
+        }
+        .btn-success {
+            background: #34a853;
+            color: white;
+        }
+        .btn-secondary {
+            background: #5f6368;
+            color: white;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background: #2a2a4a;
+            border: none;
+            border-radius: 8px;
+            color: #b0b0b0;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+        }
+        .tab.active {
+            background: #4285f4;
+            color: white;
+        }
+        .tab:hover:not(.active) {
+            background: #3a3a5a;
+        }
+        .result-box {
+            background: #0a0a1a;
+            border: 1px solid #3a3a5a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            min-height: 100px;
+        }
+        .result-success {
+            border-color: #34a853;
+        }
+        .result-error {
+            border-color: #ea4335;
+            color: #ea4335;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4285f4;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-right: 10px;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .image-card {
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+            background: #0a0a1a;
+            border: 1px solid #3a3a5a;
+        }
+        .image-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-card-actions {
+            padding: 10px;
+            text-align: center;
+        }
+        .image-card-actions button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .count-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .count-btn {
+            padding: 8px 16px;
+            border: 1px solid #3a3a5a;
+            background: #1a1a2e;
+            color: #b0b0b0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .count-btn.active {
+            background: #4285f4;
+            color: white;
+            border-color: #4285f4;
+        }
+        .count-btn:hover:not(.active) {
+            background: #2a2a4a;
+        }
+        .model-selector {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .model-btn {
+            padding: 10px 16px;
+            border: 1px solid #3a3a5a;
+            background: #1a1a2e;
+            color: #b0b0b0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 100px;
+        }
+        .model-btn.active {
+            background: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(66,133,244,0.3);
+        }
+        .model-btn:hover:not(.active) {
+            background: #2a2a4a;
+            border-color: #4285f4;
+        }
+        .model-btn .model-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .model-btn .model-desc {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+        .model-btn .model-badge {
+            font-size: 9px;
+            background: #fbbc04;
+            color: #1a1a2e;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-top: 4px;
+            font-weight: 500;
+        }
+        .model-btn.active .model-badge {
+            background: rgba(255,255,255,0.3);
+            color: white;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+        .modal-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+        }
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+        }
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #34a853;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 2000;
+            animation: slideIn 0.3s;
+        }
+        @keyframes slideIn {
+            from { transform: translateY(100px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .help-text {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+        }
+        .cookie-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+        .cookie-item label {
+            min-width: 180px;
+            font-size: 13px;
+            color: #b0b0b0;
+        }
+        .cookie-item input {
+            flex: 1;
+        }
+        @media (max-width: 768px) {
+            .image-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="header">
+            <h1>🤖 Gemini API 控制台</h1>
+            <p>Cookie配置 · 文本生成 · 图片生成</p>
+        </div>
+
+        <!-- Cookie状态卡片 -->
+        <div class="card">
+            <h2>🔐 Cookie 状态</h2>
+            <div v-if="status.loading" class="loading">
+                <span class="spinner"></span>检查中...
+            </div>
+            <div v-else>
+                <p>
+                    当前状态:
+                    <span :class="['status-badge', statusClass]">
+                        {{ statusText }}
+                    </span>
+                </p>
+                <p v-if="status.message" style="color: #888; font-size: 14px; margin-top: 10px;">
+                    {{ status.message }}
+                </p>
+                <button class="btn btn-secondary" @click="checkStatus" style="margin-top: 10px;">
+                    刷新状态
+                </button>
+                <button class="btn btn-primary" @click="showCookieConfig = !showCookieConfig" style="margin-left: 10px;">
+                    {{ showCookieConfig ? '隐藏配置' : '配置Cookie' }}
+                </button>
+            </div>
+        </div>
+
+        <!-- Cookie配置卡片（可折叠） -->
+        <div class="card" v-show="showCookieConfig">
+            <h2>⚙️ Cookie 配置</h2>
+
+            <div class="tabs">
+                <button :class="['tab', { active: cookieInputMode === 'form' }]" @click="cookieInputMode = 'form'">
+                    表单输入
+                </button>
+                <button :class="['tab', { active: cookieInputMode === 'json' }]" @click="cookieInputMode = 'json'">
+                    JSON输入
+                </button>
+                <button :class="['tab', { active: cookieInputMode === 'txt' }]" @click="cookieInputMode = 'txt'">
+                    cookies.txt
+                </button>
+            </div>
+
+            <!-- 表单输入 -->
+            <div v-if="cookieInputMode === 'form'">
+                <div class="cookie-item">
+                    <label>__Secure-1PSID *</label>
+                    <input v-model="cookies.SECURE_1PSID" class="form-input" placeholder="必填">
+                </div>
+                <div class="cookie-item">
+                    <label>__Secure-1PSIDCC</label>
+                    <input v-model="cookies.SECURE_1PSIDCC" class="form-input" placeholder="可选">
+                </div>
+                <div class="cookie-item">
+                    <label>__Secure-1PSIDTS</label>
+                    <input v-model="cookies.SECURE_1PSIDTS" class="form-input" placeholder="推荐填写">
+                </div>
+                <p class="help-text">
+                    从浏览器 F12 → Application → Cookies → gemini.google.com 获取
+                </p>
+            </div>
+
+            <!-- JSON输入 -->
+            <div v-if="cookieInputMode === 'json'">
+                <textarea
+                    v-model="jsonInput"
+                    class="form-textarea"
+                    placeholder='{"__Secure-1PSID": "xxx", "__Secure-1PSIDCC": "xxx", "__Secure-1PSIDTS": "xxx"}'
+                    style="min-height: 150px;"
+                ></textarea>
+                <p class="help-text">支持JSON对象格式</p>
+            </div>
+
+            <!-- cookies.txt输入 -->
+            <div v-if="cookieInputMode === 'txt'">
+                <textarea
+                    v-model="txtInput"
+                    class="form-textarea"
+                    placeholder="# Netscape HTTP Cookie File
+.google.com	TRUE	/	TRUE	1234567890	__Secure-1PSID	xxx
+.google.com	TRUE	/	TRUE	1234567890	__Secure-1PSIDCC	xxx"
+                    style="min-height: 200px;"
+                ></textarea>
+                <p class="help-text">
+                    使用 <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" target="_blank" style="color: #4285f4;">Get cookies.txt</a> 插件导出
+                </p>
+            </div>
+
+            <div style="margin-top: 20px;">
+                <button class="btn btn-success" @click="saveCookies" :disabled="saving">
+                    {{ saving ? '保存中...' : '💾 保存 Cookie' }}
+                </button>
+            </div>
+
+            <div v-if="saveResult" :class="['result-box', saveResult.success ? 'result-success' : 'result-error']">
+                {{ saveResult.message }}
+            </div>
+        </div>
+
+        <!-- 测试功能卡片 -->
+        <div class="card">
+            <h2>🧪 API 测试</h2>
+
+            <div class="tabs">
+                <button :class="['tab', { active: testMode === 'text' }]" @click="testMode = 'text'">
+                    📝 文本生成
+                </button>
+                <button :class="['tab', { active: testMode === 'image' }]" @click="testMode = 'image'">
+                    🎨 图片生成
+                </button>
+            </div>
+
+            <!-- 文本生成 -->
+            <div v-if="testMode === 'text'">
+                <textarea
+                    v-model="textPrompt"
+                    class="form-textarea"
+                    placeholder="请输入测试prompt...&#10;例如: 介绍一下你自己"
+                    @keydown.ctrl.enter="generateText"
+                ></textarea>
+
+                <!-- 模型选择器 -->
+                <div class="model-selector">
+                    <span style="color: #b0b0b0; align-self: center; margin-right: 5px;">选择模型:</span>
+                    <button
+                        v-for="m in models"
+                        :key="m.id"
+                        :class="['model-btn', { active: selectedModel === m.id }]"
+                        @click="selectedModel = m.id"
+                        :disabled="textTesting"
+                    >
+                        <span class="model-name">{{ m.name }}</span>
+                        <span class="model-desc">{{ m.description }}</span>
+                        <span v-if="m.badge" class="model-badge">{{ m.badge }}</span>
+                    </button>
+                </div>
+
+                <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn btn-secondary" @click="textPrompt = ''" :disabled="textTesting">
+                        清空
+                    </button>
+                    <button class="btn btn-primary" @click="generateText" :disabled="textTesting || !textPrompt.trim()">
+                        <span v-if="textTesting" class="spinner" style="margin: 0 8px 0 0;"></span>
+                        {{ textTesting ? '生成中...' : '生成内容' }}
+                    </button>
+                </div>
+
+                <div v-if="textResult || textTesting" :class="['result-box', textError ? 'result-error' : 'result-success']">
+                    <div v-if="textTesting" class="loading">
+                        <span class="spinner"></span>正在生成...
+                    </div>
+                    <div v-else>
+                        {{ textResult }}
+                    </div>
+                </div>
+
+                <div v-if="textResult && !textTesting" style="margin-top: 10px;">
+                    <button class="btn btn-secondary" @click="copyText">
+                        📋 复制结果
+                    </button>
+                </div>
+            </div>
+
+            <!-- 图片生成 -->
+            <div v-if="testMode === 'image'">
+                <textarea
+                    v-model="imagePrompt"
+                    class="form-textarea"
+                    placeholder="请输入图片描述...&#10;例如: 生成一张可爱猫咪的图片"
+                    @keydown.ctrl.enter="generateImages"
+                ></textarea>
+
+                <!-- 图片生成模型选择 -->
+                <div class="model-selector">
+                    <span style="color: #b0b0b0; align-self: center; margin-right: 5px;">选择模型:</span>
+                    <button
+                        v-for="m in imageModels"
+                        :key="m.id"
+                        :class="['model-btn', { active: imageModel === m.id }]"
+                        @click="imageModel = m.id"
+                        :disabled="imageTesting"
+                    >
+                        <span class="model-name">{{ m.name }}</span>
+                        <span class="model-desc">{{ m.description }}</span>
+                        <span v-if="m.badge" class="model-badge">{{ m.badge }}</span>
+                    </button>
+                </div>
+
+                <div class="count-selector">
+                    <span style="color: #b0b0b0; align-self: center;">生成数量:</span>
+                    <button
+                        v-for="n in [1, 2, 3, 4]"
+                        :key="n"
+                        :class="['count-btn', { active: imageCount === n }]"
+                        @click="imageCount = n"
+                        :disabled="imageTesting"
+                    >
+                        {{ n }}
+                    </button>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button class="btn btn-secondary" @click="imagePrompt = ''" :disabled="imageTesting">
+                        清空
+                    </button>
+                    <button class="btn btn-primary" @click="generateImages" :disabled="imageTesting || !imagePrompt.trim()">
+                        <span v-if="imageTesting" class="spinner" style="margin: 0 8px 0 0;"></span>
+                        {{ imageTesting ? '生成中...' : '生成图片' }}
+                    </button>
+                </div>
+
+                <div v-if="imageTesting" class="loading" style="margin-top: 20px;">
+                    <span class="spinner"></span>正在生成图片...
+                </div>
+
+                <div v-if="imageError" class="result-box result-error" style="margin-top: 15px;">
+                    {{ imageError }}
+                </div>
+
+                <div v-if="imageResults.length > 0" class="image-grid">
+                    <div v-for="(img, index) in imageResults" :key="index" class="image-card" @click="previewImage(img)">
+                        <img :src="img" :alt="'生成的图片 ' + (index + 1)">
+                        <div class="image-card-actions">
+                            <button class="btn btn-secondary" @click.stop="downloadImage(img, index)">
+                                ⬇️ 下载
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 使用说明 -->
+        <div class="card">
+            <h2>📖 使用说明</h2>
+            <ol style="line-height: 2; color: #b0b0b0;">
+                <li>访问 <a href="https://gemini.google.com" target="_blank" style="color: #4285f4;">gemini.google.com</a> 并登录</li>
+                <li>按 F12 → Application → Cookies → gemini.google.com</li>
+                <li>复制 <code style="color: #fbbc04;">__Secure-1PSID</code>（必需）、<code style="color: #fbbc04;">__Secure-1PSIDCC</code>、<code style="color: #fbbc04;">__Secure-1PSIDTS</code></li>
+                <li>保存Cookie后即可测试文本生成和图片生成功能</li>
+                <li>快捷键: Ctrl+Enter 提交</li>
+            </ol>
+        </div>
+
+        <!-- 图片预览模态框 -->
+        <div :class="['modal', { show: previewShow }]" @click="previewShow = false">
+            <div class="modal-content" @click.stop>
+                <button class="modal-close" @click="previewShow = false">×</button>
+                <img :src="previewSrc" alt="预览">
+            </div>
+        </div>
+
+        <!-- Toast提示 -->
+        <div v-if="toast" class="toast">{{ toast }}</div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    apiBaseUrl: window.location.origin,
+                    status: { loading: true, valid: null, message: '' },
+                    showCookieConfig: false,
+                    cookieInputMode: 'form',
+                    cookies: { SECURE_1PSID: '', SECURE_1PSIDCC: '', SECURE_1PSIDTS: '' },
+                    jsonInput: '',
+                    txtInput: '',
+                    saving: false,
+                    saveResult: null,
+                    testMode: 'text',
+                    // 文本模型
+                    models: [
+                        { id: 'gemini-2.5-flash', name: '快速', description: '快速回答', badge: '' },
+                        { id: 'gemini-2.5-pro', name: 'Pro', description: '高阶数学和代码', badge: '' },
+                        { id: 'gemini-3.0-pro', name: 'Pro 3.0', description: '最强推理能力', badge: '新' }
+                    ],
+                    selectedModel: 'gemini-2.5-flash',
+                    // 图片生成模型
+                    imageModels: [
+                        { id: 'gemini-2.5-flash', name: '2.5 Flash', description: '快速生成', badge: '' },
+                        { id: 'gemini-2.5-pro', name: '2.5 Pro', description: '高质量', badge: '' },
+                        { id: 'gemini-3.0-pro', name: '3.0 Pro', description: '最新模型', badge: '推荐' }
+                    ],
+                    imageModel: 'gemini-3.0-pro',
+                    // 文本生成
+                    textPrompt: '',
+                    textResult: '',
+                    textTesting: false,
+                    textError: false,
+                    // 图片生成
+                    imagePrompt: '',
+                    imageCount: 1,
+                    imageResults: [],
+                    imageTesting: false,
+                    imageError: '',
+                    previewShow: false,
+                    previewSrc: '',
+                    toast: ''
+                }
+            },
+            computed: {
+                statusClass() {
+                    if (this.status.valid === true) return 'status-valid';
+                    if (this.status.valid === false) return 'status-invalid';
+                    return 'status-unknown';
+                },
+                statusText() {
+                    if (this.status.valid === true) return '✅ 有效';
+                    if (this.status.valid === false) return '❌ 未配置';
+                    return '⏳ 未知';
+                }
+            },
+            mounted() {
+                this.loadSavedCookies();
+                this.checkStatus();
+            },
+            methods: {
+                loadSavedCookies() {
+                    // 从localStorage加载保存的cookies
+                    const saved = localStorage.getItem('gemini_cookies');
+                    if (saved) {
+                        try {
+                            const parsed = JSON.parse(saved);
+                            this.cookies.SECURE_1PSID = parsed.SECURE_1PSID || '';
+                            this.cookies.SECURE_1PSIDCC = parsed.SECURE_1PSIDCC || '';
+                            this.cookies.SECURE_1PSIDTS = parsed.SECURE_1PSIDTS || '';
+                        } catch (e) {
+                            console.error('Failed to load saved cookies:', e);
+                        }
+                    }
+                },
+                saveCookiesToLocal() {
+                    // 保存cookies到localStorage
+                    localStorage.setItem('gemini_cookies', JSON.stringify(this.cookies));
+                },
+                async checkStatus() {
+                    this.status.loading = true;
+                    try {
+                        const response = await axios.get(`${this.apiBaseUrl}/api/cookies/status`);
+                        this.status.valid = response.data.valid;
+                        this.status.message = response.data.message || '';
+                    } catch (error) {
+                        this.status.valid = false;
+                        this.status.message = error.response?.data?.detail || error.message;
+                    } finally {
+                        this.status.loading = false;
+                    }
+                },
+                parseCookiesTxt(text) {
+                    const cookies = {};
+                    const lines = text.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('#') || !line.trim()) continue;
+                        const parts = line.split('\t');
+                        if (parts.length >= 7) {
+                            const name = parts[5];
+                            const value = parts[6];
+                            if (name === '__Secure-1PSID' || name === '__Secure-1PSIDCC' || name === '__Secure-1PSIDTS') {
+                                cookies[name] = value;
+                            }
+                        }
+                    }
+                    return cookies;
+                },
+                async saveCookies() {
+                    this.saving = true;
+                    this.saveResult = null;
+                    try {
+                        let cookieData = {};
+                        if (this.cookieInputMode === 'form') {
+                            if (this.cookies.SECURE_1PSID) cookieData['__Secure-1PSID'] = this.cookies.SECURE_1PSID;
+                            if (this.cookies.SECURE_1PSIDCC) cookieData['__Secure-1PSIDCC'] = this.cookies.SECURE_1PSIDCC;
+                            if (this.cookies.SECURE_1PSIDTS) cookieData['__Secure-1PSIDTS'] = this.cookies.SECURE_1PSIDTS;
+                        } else if (this.cookieInputMode === 'json') {
+                            cookieData = JSON.parse(this.jsonInput);
+                        } else if (this.cookieInputMode === 'txt') {
+                            cookieData = this.parseCookiesTxt(this.txtInput);
+                            if (Object.keys(cookieData).length === 0) {
+                                this.saveResult = { success: false, message: '未能解析到有效Cookie' };
+                                this.saving = false;
+                                return;
+                            }
+                        }
+                        if (!cookieData['__Secure-1PSID'] && !cookieData['SECURE_1PSID']) {
+                            this.saveResult = { success: false, message: '__Secure-1PSID 是必填项' };
+                            return;
+                        }
+                        const response = await axios.post(`${this.apiBaseUrl}/api/cookies`, { cookies: cookieData });
+                        this.saveResult = { success: true, message: response.data.message || 'Cookie保存成功！' };
+                        // 保存到localStorage
+                        this.saveCookiesToLocal();
+                        this.checkStatus();
+                        this.showToast('Cookie保存成功！');
+                    } catch (error) {
+                        this.saveResult = { success: false, message: `保存失败: ${error.response?.data?.detail || error.message}` };
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async generateText() {
+                    this.textTesting = true;
+                    this.textResult = '';
+                    this.textError = false;
+                    try {
+                        const response = await axios.post(`${this.apiBaseUrl}/v1/generate`, {
+                            prompt: this.textPrompt,
+                            model: this.selectedModel
+                        });
+                        this.textResult = response.data.text;
+                    } catch (error) {
+                        this.textResult = error.response?.data?.detail || error.message;
+                        this.textError = true;
+                    } finally {
+                        this.textTesting = false;
+                    }
+                },
+                async generateImages() {
+                    this.imageTesting = true;
+                    this.imageResults = [];
+                    this.imageError = '';
+                    try {
+                        const response = await axios.post(`${this.apiBaseUrl}/v1/generate-images`, {
+                            prompt: this.imagePrompt,
+                            count: this.imageCount,
+                            model: this.imageModel
+                        });
+                        this.imageResults = response.data.images;
+                    } catch (error) {
+                        this.imageError = error.response?.data?.detail || error.message;
+                    } finally {
+                        this.imageTesting = false;
+                    }
+                },
+                copyText() {
+                    navigator.clipboard.writeText(this.textResult);
+                    this.showToast('已复制到剪贴板');
+                },
+                downloadImage(dataUrl, index) {
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = `gemini-image-${index + 1}.png`;
+                    link.click();
+                    this.showToast('图片已下载');
+                },
+                previewImage(src) {
+                    this.previewSrc = src;
+                    this.previewShow = true;
+                },
+                showToast(message) {
+                    this.toast = message;
+                    setTimeout(() => { this.toast = ''; }, 2000);
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
