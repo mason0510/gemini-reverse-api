@@ -1,25 +1,13 @@
 version: '3.3'
 
 services:
-  gemini-text-api:
+  gemini-reverse-api:
     build: .
-    container_name: gemini-text-api
+    container_name: gemini-reverse-api
     restart: unless-stopped
     ports:
-      - "8765:8000"
-    environment:
-      - SECURE_1PSID=${SECURE_1PSID}
-      - SECURE_1PSIDCC=${SECURE_1PSIDCC}
-      - SECURE_1PSIDTS=${SECURE_1PSIDTS}
-      - VIRTUAL_HOST=gemini-text.satoshitech.xyz
-      - VIRTUAL_PORT=8000
-      - LETSENCRYPT_HOST=gemini-text.satoshitech.xyz
-      - LETSENCRYPT_EMAIL=houziyu2019@gmail.com
+      - "8100:8100"
+    env_file:
+      - .env
     volumes:
       - ./web:/app/web:ro
-    networks:
-      - nginx-proxy
-
-networks:
-  nginx-proxy:
-    external: true
