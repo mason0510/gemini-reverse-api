@@ -778,11 +778,14 @@
                     this.textResult = '';
                     this.textError = false;
                     try {
-                        const response = await axios.post(`${this.apiBaseUrl}/v1/generate`, {
-                            prompt: this.textPrompt,
-                            model: this.selectedModel
+                        // 使用 OpenAI 兼容接口
+                        const response = await axios.post(`${this.apiBaseUrl}/v1/chat/completions`, {
+                            model: this.selectedModel,
+                            messages: [
+                                { role: 'user', content: this.textPrompt }
+                            ]
                         });
-                        this.textResult = response.data.text;
+                        this.textResult = response.data.choices[0].message.content;
                     } catch (error) {
                         this.textResult = error.response?.data?.detail || error.message;
                         this.textError = true;
@@ -795,12 +798,14 @@
                     this.imageResults = [];
                     this.imageError = '';
                     try {
-                        const response = await axios.post(`${this.apiBaseUrl}/v1/generate-images`, {
+                        // 使用 OpenAI 兼容接口
+                        const response = await axios.post(`${this.apiBaseUrl}/v1/images/generations`, {
+                            model: this.imageModel,
                             prompt: this.imagePrompt,
-                            count: this.imageCount,
-                            model: this.imageModel
+                            n: this.imageCount
                         });
-                        this.imageResults = response.data.images;
+                        // 转换为前端需要的格式
+                        this.imageResults = response.data.data.map(item => item.b64_json);
                     } catch (error) {
                         this.imageError = error.response?.data?.detail || error.message;
                     } finally {
