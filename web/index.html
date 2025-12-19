@@ -418,19 +418,19 @@
             <!-- 表单输入 -->
             <div v-if="cookieInputMode === 'form'">
                 <div class="cookie-item">
-                    <label>__Secure-1PSID *</label>
+                    <label>Cookie Key 1 *</label>
                     <input v-model="cookies.SECURE_1PSID" class="form-input" placeholder="必填">
                 </div>
                 <div class="cookie-item">
-                    <label>__Secure-1PSIDCC</label>
+                    <label>Cookie Key 2</label>
                     <input v-model="cookies.SECURE_1PSIDCC" class="form-input" placeholder="可选">
                 </div>
                 <div class="cookie-item">
-                    <label>__Secure-1PSIDTS</label>
+                    <label>Cookie Key 3</label>
                     <input v-model="cookies.SECURE_1PSIDTS" class="form-input" placeholder="推荐填写">
                 </div>
                 <p class="help-text">
-                    从浏览器 F12 → Application → Cookies → gemini.google.com 获取
+                    请从浏览器获取相关认证参数
                 </p>
             </div>
 
@@ -439,7 +439,7 @@
                 <textarea
                     v-model="jsonInput"
                     class="form-textarea"
-                    placeholder='{"__Secure-1PSID": "xxx", "__Secure-1PSIDCC": "xxx", "__Secure-1PSIDTS": "xxx"}'
+                    placeholder='{"key1": "xxx", "key2": "xxx", "key3": "xxx"}'
                     style="min-height: 150px;"
                 ></textarea>
                 <p class="help-text">支持JSON对象格式</p>
@@ -451,12 +451,11 @@
                     v-model="txtInput"
                     class="form-textarea"
                     placeholder="# Netscape HTTP Cookie File
-.google.com	TRUE	/	TRUE	1234567890	__Secure-1PSID	xxx
-.google.com	TRUE	/	TRUE	1234567890	__Secure-1PSIDCC	xxx"
+.example.com	TRUE	/	TRUE	1234567890	cookie_name	xxx"
                     style="min-height: 200px;"
                 ></textarea>
                 <p class="help-text">
-                    使用 <a href="https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc" target="_blank" style="color: #4285f4;">Get cookies.txt</a> 插件导出
+                    使用浏览器插件导出Cookie文件
                 </p>
             </div>
 
@@ -608,10 +607,9 @@
         <div class="card">
             <h2>📖 使用说明</h2>
             <ol style="line-height: 2; color: #b0b0b0;">
-                <li>访问 <a href="https://gemini.google.com" target="_blank" style="color: #4285f4;">gemini.google.com</a> 并登录</li>
-                <li>按 F12 → Application → Cookies → gemini.google.com</li>
-                <li>复制 <code style="color: #fbbc04;">__Secure-1PSID</code>（必需）、<code style="color: #fbbc04;">__Secure-1PSIDCC</code>、<code style="color: #fbbc04;">__Secure-1PSIDTS</code></li>
-                <li>保存Cookie后即可测试文本生成和图片生成功能</li>
+                <li>配置必要的认证参数（Cookie配置）</li>
+                <li>检查连接状态是否正常</li>
+                <li>保存配置后即可测试文本生成和图片生成功能</li>
                 <li>快捷键: Ctrl+Enter 提交</li>
             </ol>
         </div>
