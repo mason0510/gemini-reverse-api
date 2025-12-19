@@ -140,7 +140,3 @@ API_KEY=your-api-key-here
 ## License
 
 MIT License
-
-## 致谢
-
-本项目基于 [HanaokaYuzu/Gemini-API](https://github.com/HanaokaYuzu/Gemini-API) 构建。
