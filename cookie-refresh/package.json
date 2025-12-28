@@ -1,0 +1,14 @@
+{
+  "name": "gemini-cookie-refresh",
+  "version": "1.0.0",
+  "description": "Gemini Cookie管理工具 - 手动导出方案",
+  "main": "save-cookies.js",
+  "scripts": {
+    "quick": "./quick-login.sh",
+    "save": "node save-cookies.js",
+    "update": "./update-container.sh"
+  },
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}

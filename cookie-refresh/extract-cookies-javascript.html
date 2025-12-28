@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gemini Cookie 提取器</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .status {
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+        }
+        .success {
+            background: #e8f5e9;
+            border-left-color: #4CAF50;
+        }
+        .error {
+            background: #ffebee;
+            border-left-color: #f44336;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #1976D2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .cookie-info {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .cookie-name {
+            font-weight: bold;
+            color: #2196F3;
+        }
+        .cookie-value {
+            word-break: break-all;
+            color: #666;
+            margin: 5px 0 15px 0;
+        }
+        .instructions {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍪 Gemini Cookie 提取器</h1>
+        <p>从当前网页中提取Gemini所需的Cookie</p>
+
+        <div class="instructions">
+            <strong>📝 使用说明：</strong>
+            <ol>
+                <li>在BitBrowser中访问 <code>gemini.google.com</code></li>
+                <li>确保已成功登录并能正常对话</li>
+                <li>将此HTML文件拖到BitBrowser浏览器中打开</li>
+                <li>点击下方"提取Cookie"按钮</li>
+                <li>复制生成的cookies.txt内容</li>
+                <li>运行部署脚本或手动更新服务器</li>
+            </ol>
+        </div>
+
+        <button onclick="extractCookies()">🔍 提取 Cookie</button>
+
+        <div id="status"></div>
+        <div id="cookieInfo"></div>
+
+        <div id="cookiesTxt" style="display: none;">
+            <h3>cookies.txt 格式</h3>
+            <textarea id="cookiesTxtContent" readonly></textarea>
+            <button onclick="copyToClipboard()">📋 复制到剪贴板</button>
+        </div>
+    </div>
+
+    <script>
+        function extractCookies() {
+            const statusDiv = document.getElementById('status');
+            const cookieInfoDiv = document.getElementById('cookieInfo');
+            const cookiesTxtDiv = document.getElementById('cookiesTxt');
+            const cookiesTxtContent = document.getElementById('cookiesTxtContent');
+
+            // 清空之前的结果
+            statusDiv.innerHTML = '';
+            cookieInfoDiv.innerHTML = '';
+
+            // 获取所有Cookie
+            const allCookies = document.cookie;
+
+            if (!allCookies) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '❌ 未找到任何Cookie。请确保：<br>1. 在gemini.google.com域名下打开此页面<br>2. 已成功登录Gemini';
+                return;
+            }
+
+            // 解析Cookie
+            const cookieObj = {};
+            allCookies.split(';').forEach(cookie => {
+                const [name, value] = cookie.trim().split('=');
+                cookieObj[name] = value;
+            });
+
+            // 检查必需的Cookie
+            const requiredCookies = ['__Secure-1PSID', '__Secure-1PSIDCC', '__Secure-1PSIDTS'];
+            const foundCookies = {};
+            const missingCookies = [];
+
+            requiredCookies.forEach(name => {
+                if (cookieObj[name]) {
+                    foundCookies[name] = cookieObj[name];
+                } else {
+                    missingCookies.push(name);
+                }
+            });
+
+            // 显示结果
+            if (missingCookies.length > 0) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ 缺少必需的Cookie: ${missingCookies.join(', ')}<br><br>` +
+                    `<strong>解决方案：</strong><br>` +
+                    `1. 确保在 <code>gemini.google.com</code> 域名下打开此页面<br>` +
+                    `2. 尝试退出登录后重新登录<br>` +
+                    `3. 清除浏览器缓存后重新登录`;
+                return;
+            }
+
+            // 显示成功状态
+            statusDiv.className = 'status success';
+            statusDiv.innerHTML = '✅ 成功提取所有必需的Cookie！';
+
+            // 显示Cookie信息
+            let cookieHtml = '<h3>提取的Cookie：</h3>';
+            for (const [name, value] of Object.entries(foundCookies)) {
+                const preview = value.length > 60 ? value.substring(0, 60) + '...' : value;
+                cookieHtml += `
+                    <div class="cookie-name">${name}</div>
+                    <div class="cookie-value">${preview}</div>
+                `;
+            }
+            cookieInfoDiv.innerHTML = cookieHtml;
+
+            // 生成cookies.txt格式
+            const now = Math.floor(Date.now() / 1000);
+            const oneYear = now + (365 * 24 * 60 * 60);
+
+            let cookiesTxt = '# Netscape HTTP Cookie File\n';
+            cookiesTxt += '# This is a generated file! Do not edit.\n\n';
+
+            for (const [name, value] of Object.entries(foundCookies)) {
+                // 格式: domain flag path secure expiration name value
+                cookiesTxt += `.google.com\tTRUE\t/\tTRUE\t${oneYear}\t${name}\t${value}\n`;
+            }
+
+            cookiesTxtContent.value = cookiesTxt;
+            cookiesTxtDiv.style.display = 'block';
+        }
+
+        function copyToClipboard() {
+            const textarea = document.getElementById('cookiesTxtContent');
+            textarea.select();
+            document.execCommand('copy');
+
+            alert('✅ 已复制到剪贴板！\n\n下一步：\n1. 保存到文件: cookies.txt\n2. 运行部署脚本: ./deploy-cookies.sh cookies.txt');
+        }
+
+        // 页面加载时自动检测
+        window.onload = function() {
+            const hostname = window.location.hostname;
+            if (hostname && !hostname.includes('google.com')) {
+                const statusDiv = document.getElementById('status');
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = '⚠️ 警告：当前不在 google.com 域名下<br>' +
+                    '请在BitBrowser中访问 <a href="https://gemini.google.com" target="_blank">gemini.google.com</a>，然后重新打开此页面';
+            }
+        };
+    </script>
+</body>
+</html>
