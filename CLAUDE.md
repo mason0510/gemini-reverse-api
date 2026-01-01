@@ -436,35 +436,53 @@ gemini-2.5-pro (立即) → ✅ 成功 (不同模型)
 
 ## 📁 项目文件结构
 
+### 核心依赖关系
+
+```
+api_server_v4.py (主服务器)
+    │
+    ├── import cookie_persistence  ───> cookie_persistence.py
+    ├── import claude_compat ─────────> claude_compat.py
+    ├── import watermark_remover ─────> watermark_remover.py
+    └── (Dockerfile) ─────────────────> model_rate_limiter.py
+```
+
+### 文件结构
+
 ```
 gemini-text/
-├── CLAUDE.md                    # 项目规范 (本文件)
-├── README.md                    # 项目说明
-├── API_DOCUMENTATION.md         # API完整文档
-├── RATE_LIMIT_CONFIG.md         # 限流配置说明
 │
-├── api_server_v4.py             # 🚀 主服务器代码 (v4.2)
-├── claude_compat.py             # Claude兼容层
-├── cookie_persistence.py        # Cookie持久化
-├── model_rate_limiter.py        # 模型限流器
+├── 🚀 核心运行文件 (必需)
+│   ├── api_server_v4.py         # 主服务器 (57KB)
+│   ├── claude_compat.py         # Claude兼容路由 (12KB)
+│   ├── cookie_persistence.py    # Cookie持久化+Bark通知 (6KB)
+│   ├── watermark_remover.py     # 图片水印移除 (6KB)
+│   ├── model_rate_limiter.py    # Redis模型限流 (4KB)
+│   └── web/index.html           # Web管理界面 (31KB)
 │
-├── .env                         # 环境变量 (Cookie, API Key)
-├── .env.example                 # 环境变量模板
-├── Dockerfile                   # Docker配置
-├── docker-compose.yml           # Docker Compose配置
+├── 🐳 Docker配置
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── .env                     # 环境变量 (Cookie, API Key)
+│   └── .env.example             # 环境变量模板
 │
-├── test-all-models.py           # 🧪 全模型自动化测试 (Skill)
-├── update-server-cookies.sh     # Cookie更新脚本
-├── init.sh                      # 初始化脚本
+├── 🧪 测试工具
+│   └── test-all-models.py       # 全模型自动化测试 (Skill)
 │
-├── cookie-refresh/              # Cookie刷新工具
-├── docs/                        # 技术文档
-├── web/                         # Web界面
+├── 📚 文档
+│   ├── CLAUDE.md                # 项目规范 (本文件)
+│   ├── README.md                # 项目说明
+│   └── API_DOCUMENTATION.md     # API完整文档
 │
-└── archived/                    # 📦 归档文件 (历史版本/旧文档)
+├── 🔧 工具脚本
+│   ├── cookie-refresh/          # Cookie刷新工具
+│   ├── update-server-cookies.sh # Cookie更新脚本
+│   └── init.sh                  # 初始化脚本
+│
+└── 📦 archived/                 # 归档文件 (历史版本/旧文档)
     ├── old-versions/            # 旧版本代码
     ├── docs/                    # 历史文档
-    ├── scripts/                 # 不常用脚本
+    └── scripts/                 # 不常用脚本
     └── test-scripts/            # 旧测试脚本
 ```
 
