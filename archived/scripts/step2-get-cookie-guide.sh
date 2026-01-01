@@ -1,0 +1,51 @@
+#!/bin/bash
+# 步骤2指导脚本 - 获取Cookie
+
+echo "==============================================="
+echo "  步骤2: 重新获取Cookie"
+echo "==============================================="
+echo ""
+echo "📋 操作步骤："
+echo ""
+echo "1️⃣  清除旧Cookie（重要！）"
+echo "   - 打开Chrome/Edge浏览器"
+echo "   - 访问: chrome://settings/siteData"
+echo "   - 搜索: google.com"
+echo "   - 点击【删除】，清除所有google.com的Cookie"
+echo ""
+echo "2️⃣  重新登录Gemini"
+echo "   - 访问: https://gemini.google.com"
+echo "   - 登录你的Google账号"
+echo "   - 确认能正常使用Gemini（发送一条测试消息）"
+echo ""
+echo "3️⃣  导出Cookie（选择一种方式）"
+echo ""
+echo "   方式A: 使用浏览器扩展（推荐）⭐"
+echo "   ----------------------------------------"
+echo "   1. 安装扩展: Get cookies.txt LOCALLY"
+echo "      Chrome商店: https://chrome.google.com/webstore/detail/cclelndahbckbenkjhflpdbgdldlbecc"
+echo "   2. 访问 https://gemini.google.com"
+echo "   3. 点击扩展图标 → Export"
+echo "   4. 保存为: /Users/houzi/Downloads/cookies-us.txt"
+echo ""
+echo "   方式B: 手动复制（备选）"
+echo "   ----------------------------------------"
+echo "   1. 在 gemini.google.com 页面按 F12"
+echo "   2. Application → Cookies → https://gemini.google.com"
+echo "   3. 复制以下Cookie的Value值："
+echo "      - __Secure-1PSID"
+echo "      - __Secure-1PSIDCC"
+echo "      - __Secure-1PSIDTS"
+echo "   4. 手动编辑.env文件粘贴"
+echo ""
+echo "==============================================="
+echo ""
+read -p "Cookie已获取并保存？(y/n): " CONFIRM
+
+if [ "$CONFIRM" != "y" ]; then
+    echo "❌ 请先获取Cookie后再继续"
+    exit 1
+fi
+
+echo ""
+echo "✅ 继续执行步骤3..."

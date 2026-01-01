@@ -1,0 +1,177 @@
+{
+  "project": "gemini-reverse-api",
+  "description": "Gemini逆向API服务 - 支持OpenAI/Claude/Gemini多格式兼容",
+  "total_features": 11,
+  "completed": 9,
+  "in_progress": 0,
+  "features": [
+    {
+      "id": 1,
+      "category": "infrastructure",
+      "description": "基础API服务搭建（FastAPI + gemini-webapi）",
+      "priority": "high",
+      "steps": [
+        "创建FastAPI应用",
+        "集成gemini-webapi库",
+        "实现Cookie配置接口",
+        "部署到服务器"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T15:00:00Z",
+      "notes": "已完成，运行在82.29.54.80:8100"
+    },
+    {
+      "id": 2,
+      "category": "functional",
+      "description": "文本生成接口（支持模型选择）",
+      "priority": "high",
+      "steps": [
+        "实现/v1/generate接口",
+        "支持gemini-2.5-flash/pro/3.0-pro模型",
+        "测试不同模型响应"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T15:10:00Z",
+      "notes": "已完成，支持3种模型"
+    },
+    {
+      "id": 3,
+      "category": "functional",
+      "description": "图片生成接口（Imagen集成）",
+      "priority": "high",
+      "steps": [
+        "实现/v1/generate-images接口",
+        "处理GeneratedImage下载（=s2048参数）",
+        "中文提示词自动添加Create an image前缀",
+        "返回base64编码图片"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T15:30:00Z",
+      "notes": "已完成，支持模型选择"
+    },
+    {
+      "id": 4,
+      "category": "ui",
+      "description": "Web管理界面（Cookie配置+测试）",
+      "priority": "medium",
+      "steps": [
+        "创建Vue.js前端页面",
+        "Cookie状态显示和配置",
+        "文本/图片生成测试",
+        "模型选择器",
+        "LocalStorage保存Cookie"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T15:40:00Z",
+      "notes": "已完成，支持多种输入格式"
+    },
+    {
+      "id": 5,
+      "category": "integration",
+      "description": "完善OpenAI兼容接口 /v1/chat/completions",
+      "priority": "high",
+      "steps": [
+        "支持多轮对话历史",
+        "正确处理system/user/assistant角色",
+        "支持stream流式输出",
+        "返回完整的OpenAI格式响应"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T16:30:00Z",
+      "notes": "已完成，支持多轮对话拼接，返回完整OpenAI格式"
+    },
+    {
+      "id": 6,
+      "category": "integration",
+      "description": "添加OpenAI图片接口 /v1/images/generations",
+      "priority": "high",
+      "steps": [
+        "实现OpenAI格式的图片生成接口",
+        "支持n参数（生成数量）",
+        "支持response_format（url/b64_json）",
+        "返回标准OpenAI格式"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-18T16:30:00Z",
+      "notes": "已完成，支持n和response_format参数"
+    },
+    {
+      "id": 7,
+      "category": "infrastructure",
+      "description": "多账号配置和轮询",
+      "priority": "high",
+      "steps": [
+        "支持配置多个Cookie账号",
+        "实现轮询/加权选择策略",
+        "记录每个账号的使用量",
+        "自动切换失效账号",
+        "Web界面支持多账号管理"
+      ],
+      "passes": false,
+      "last_tested": null,
+      "notes": ""
+    },
+    {
+      "id": 8,
+      "category": "integration",
+      "description": "接入new-api作为自定义渠道",
+      "priority": "medium",
+      "steps": [
+        "在new-api添加自定义渠道",
+        "配置Base URL指向本服务",
+        "配置模型映射",
+        "测试负载均衡功能"
+      ],
+      "passes": false,
+      "last_tested": null,
+      "notes": "依赖Feature #5, #6完成"
+    },
+    {
+      "id": 9,
+      "category": "integration",
+      "description": "Claude API 兼容层 /v1/messages",
+      "priority": "high",
+      "steps": [
+        "实现 /v1/messages 端点",
+        "支持 Claude 消息格式转换",
+        "支持 system 字符串和数组格式",
+        "支持工具调用 (tools)",
+        "支持流式响应 (SSE)",
+        "Claude Code CLI 集成测试"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-24T14:40:00Z",
+      "notes": "已完成，支持 Claude Code CLI，工具链调用正常"
+    },
+    {
+      "id": 10,
+      "category": "infrastructure",
+      "description": "Redis 模型级别限流",
+      "priority": "medium",
+      "steps": [
+        "集成 Redis 限流",
+        "全局限流 60次/小时/IP",
+        "模型级别限流（同模型5秒间隔）",
+        "返回友好错误信息"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-23T10:00:00Z",
+      "notes": "已完成，防止滥用"
+    },
+    {
+      "id": 11,
+      "category": "integration",
+      "description": "第三方客户端集成（CherryStudio等）",
+      "priority": "medium",
+      "steps": [
+        "支持 Gemini 原生格式端点",
+        "支持 /gemini/v1beta/models 列表",
+        "支持流式生成 streamGenerateContent",
+        "编写集成文档"
+      ],
+      "passes": true,
+      "last_tested": "2025-12-23T12:00:00Z",
+      "notes": "已完成，CherryStudio、NextChat 等均可接入"
+    }
+  ]
+}

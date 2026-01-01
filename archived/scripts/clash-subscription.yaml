@@ -1,0 +1,23 @@
+# Clash Subscription Configuration
+# 日本和美国节点订阅
+
+proxies:
+  - name: JP - 日本Vmess
+    type: vmess
+    server: 31.58.223.134
+    port: 8443
+    uuid: 78cdc6b7-8b14-47d6-bf09-3167bc5124fb
+    alterId: 0
+    cipher: auto
+    tls: false
+    udp: true
+
+  - name: US - 美国Vmess
+    type: vmess
+    server: 82.29.54.80
+    port: 8443
+    uuid: 60f4e0e4-71ed-441c-a226-82abb655168a
+    alterId: 0
+    cipher: auto
+    tls: false
+    udp: true

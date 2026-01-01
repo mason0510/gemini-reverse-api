@@ -1,11 +1,66 @@
 # Gemini Reverse API - Claude Code 项目规范
 
-**项目**: Gemini Reverse API (Cookie-based)
+**项目**: Gemini Reverse API (Hybrid Mode: Provider + Cookie)
 **位置**: `/Users/houzi/code/06-production-business-money-live/my-reverse-api/gemini-text`
 **服务器**: 82.29.54.80:8100
 **容器**: google-reverse
-**版本**: v4.0 (多模态增强版)
-**最后更新**: 2025-12-28
+**版本**: v4.1 (Provider模式 + Cookie自动续期)
+**最后更新**: 2025-12-29
+
+---
+
+## 🔄 双模式架构
+
+### Provider模式（优先 ⭐推荐）
+
+**优势**:
+- ✅ 使用官方API格式，稳定可靠
+- ✅ 无需Cookie维护，零过期问题
+- ✅ 响应速度快，Token计费透明
+- ✅ 支持最新模型（4个模型全可用）
+
+**配置**:
+```bash
+ENABLE_PROVIDER_MODE=true
+PROVIDER_BASE_URL=http://82.29.54.80:13001/proxy/gemini-hk/v1beta
+PROVIDER_AUTH_TOKEN=zxc6545398
+PROVIDER_DEFAULT_MODEL=gemini-flash-latest  # 推荐: 自动最新版本
+PROVIDER_MODELS=gemini-2.5-flash,gemini-2.5-flash-lite,gemini-3-flash-preview,gemini-flash-latest,gemini-flash-lite-latest,gemma-3-1b-it,gemma-3-4b-it,gemma-3-12b-it,gemma-3-27b-it
+```
+
+**可用模型列表** (共9个模型):
+
+### Gemini系列 (5个)
+
+| 模型ID | 模型名称 | 状态 | 类型 | 推荐场景 |
+|--------|---------|------|------|---------|
+| `gemini-3-flash-preview` | Gemini 3.0 Flash Preview | ✅ | 文本 | 最新特性、快速响应 |
+| `gemini-flash-latest` | Gemini Flash Latest | ✅ | 文本 | 自动最新版本 |
+| `gemini-2.5-flash` | Gemini 2.5 Flash | ✅ | 文本 | 稳定版本、高质量 |
+| `gemini-2.5-flash-lite` | Gemini 2.5 Flash Lite | ✅ | 文本 | 轻量快速 |
+| `gemini-flash-lite-latest` | Gemini Flash Lite Latest | ✅ | 文本 | 最新轻量版 |
+
+### Gemma系列 (4个 - 开源模型)
+
+| 模型ID | 模型名称 | 状态 | 参数量 | 推荐场景 |
+|--------|---------|------|--------|---------|
+| `gemma-3-27b-it` | Gemma 3 27B IT | ✅ | 27B | 最强性能 |
+| `gemma-3-12b-it` | Gemma 3 12B IT | ✅ | 12B | 平衡性能 |
+| `gemma-3-4b-it` | Gemma 3 4B IT | ✅ | 4B | 轻量快速 |
+| `gemma-3-1b-it` | Gemma 3 1B IT | ✅ | 1B | 超轻量 |
+
+**测试状态**: ✅ 已验证（9/9模型全部可用）
+
+### Cookie模式（备用）
+
+**用途**: Provider不可用时的fallback方案
+
+**问题**:
+- ⚠️ Cookie频繁过期（PSIDTS每几小时~几天）
+- ⚠️ 需要定期手动更新
+- ⚠️ 依赖BitBrowser提取工具
+
+**自动续期**: v4.1已实现Cookie持久化，每9分钟自动刷新
 
 ---
 
@@ -383,19 +438,46 @@ gemini-2.5-pro (立即) → ✅ 成功 (不同模型)
 
 ```
 gemini-text/
-├── CLAUDE.md                          # 本文件 - 项目规范
-├── .env                               # 环境变量 (Cookie, API Key)
-├── quick-test.py                      # 快速API测试
-├── test-all-models-complete.py        # 完整模型测试 (7个模型)
-├── test-all-apis.py                   # 全功能测试 (11个端点)
-├── update-server-cookies.sh           # Cookie自动更新脚本
-├── README.md                          # 项目说明
-├── API_DOCUMENTATION.md               # API完整文档
-├── MODEL_TEST_SUMMARY.md              # 模型测试总结
-├── NEW_IMAGE_MODELS.md                # 新增图片模型说明
-└── docs/                              # 详细文档
-    ├── GEMINI_WEBAPI_REVERSE_ENGINEERING.md
-    └── FUNCTION_CALLING_ANALYSIS.md
+├── CLAUDE.md                    # 项目规范 (本文件)
+├── README.md                    # 项目说明
+├── API_DOCUMENTATION.md         # API完整文档
+├── RATE_LIMIT_CONFIG.md         # 限流配置说明
+│
+├── api_server_v4.py             # 🚀 主服务器代码 (v4.2)
+├── claude_compat.py             # Claude兼容层
+├── cookie_persistence.py        # Cookie持久化
+├── model_rate_limiter.py        # 模型限流器
+│
+├── .env                         # 环境变量 (Cookie, API Key)
+├── .env.example                 # 环境变量模板
+├── Dockerfile                   # Docker配置
+├── docker-compose.yml           # Docker Compose配置
+│
+├── test-all-models.py           # 🧪 全模型自动化测试 (Skill)
+├── update-server-cookies.sh     # Cookie更新脚本
+├── init.sh                      # 初始化脚本
+│
+├── cookie-refresh/              # Cookie刷新工具
+├── docs/                        # 技术文档
+├── web/                         # Web界面
+│
+└── archived/                    # 📦 归档文件 (历史版本/旧文档)
+    ├── old-versions/            # 旧版本代码
+    ├── docs/                    # 历史文档
+    ├── scripts/                 # 不常用脚本
+    └── test-scripts/            # 旧测试脚本
+```
+
+### Claude Code Skill
+
+项目测试已集成为 Claude Code Skill:
+
+```bash
+# 运行全模型测试
+/gemini-api-test
+
+# 或直接运行脚本
+python3 test-all-models.py
 ```
 
 ---

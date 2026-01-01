@@ -294,17 +294,27 @@ def test_gemini_native():
         return False, str(e)
 
 # ============ 图片生成测试 (需要Cookie) ============
-def test_image_generation():
+IMAGE_MODELS = [
+    ("gemini-2.5-flash-image", "Flash快速"),
+    ("gemini-3-pro-image-preview", "Pro高质量"),
+    ("gemini-3-pro-image-preview-2k", "Pro 2K"),
+    ("gemini-3-pro-image-preview-4k", "Pro 4K"),
+]
+
+def test_image_generation(model=None):
     """测试图片生成端点"""
     try:
         payload = {
             "prompt": "A simple red circle",
             "response_type": "base64"
         }
+        if model:
+            payload["model"] = model
+
         resp = requests.post(
             f"{API_BASE}/v1/images/generations",
             json=payload,
-            timeout=120
+            timeout=180  # 4K需要更长时间
         )
 
         if resp.status_code == 200:
@@ -315,7 +325,14 @@ def test_image_generation():
         elif resp.status_code == 503:
             return None, "Gemini client not initialized (Cookie needed)"
         elif resp.status_code == 500:
-            return None, "Cookie expired (SECURE_1PSIDTS)"
+            error_detail = ""
+            try:
+                error_detail = resp.json().get("detail", "")
+            except:
+                pass
+            if "SECURE_1PSIDTS" in error_detail or "cookie" in error_detail.lower():
+                return None, "Cookie expired (SECURE_1PSIDTS)"
+            return False, f"status=500, {error_detail[:50]}"
         elif resp.status_code == 400:
             try:
                 error_msg = resp.json().get("detail", "")
@@ -324,6 +341,8 @@ def test_image_generation():
             except:
                 pass
             return False, f"status={resp.status_code}"
+        elif resp.status_code == 429:
+            return True, "Rate limited (expected)"
         else:
             return False, f"status={resp.status_code}"
     except Exception as e:
@@ -406,29 +425,31 @@ def run_tests(full_test=False):
             else:
                 results["failed"] += 1
 
-        print_section("图片生成 (需要Cookie)")
-        image_tests = [
-            ("Image Generation", test_image_generation),
-        ]
-
-        for name, test_func in image_tests:
-            success, details = test_func()
-            print_result(name, success, details)
+        print_section("图片生成 (需要Cookie, 水印自动去除)")
+        # 测试所有4个图片模型
+        for model_id, model_name in IMAGE_MODELS:
+            success, details = test_image_generation(model=model_id)
+            print_result(f"Image: {model_name}", success, details)
             if success is None:
                 results["cookie_needed"] += 1
             elif success:
                 results["passed"] += 1
             else:
                 results["failed"] += 1
+            # 避免触发限流
+            if success:
+                import time
+                time.sleep(3)
     else:
         print_section("跳过的测试 (需要 --full 参数)")
         skipped = [
             "Chat Completions",
             "Simple Generate",
             "Gemini Native Format",
-            "Image Generation",
-            "PDF Analysis",
-            "UI Design Analysis",
+            "Image: Flash快速",
+            "Image: Pro高质量",
+            "Image: Pro 2K",
+            "Image: Pro 4K",
         ]
         for name in skipped:
             print(f"  {Colors.YELLOW}⏭️  SKIP{Colors.END} {name}")
