@@ -106,6 +106,14 @@ PROVIDER_MODEL_MAP = {
     "gemini-3-pro-image-preview": "gemini-3-pro-image-preview",
 }
 
+# 图片模型列表 - 用于检测请求是否需要图片生成
+IMAGE_MODELS = [
+    "gemini-2.5-flash-image",
+    "gemini-3-pro-image-preview",
+    "gemini-3-pro-image-preview-2k",
+    "gemini-3-pro-image-preview-4k",
+]
+
 R2_CONFIG = {
     "endpoint": "https://79e5a95d36e6e4084ae15fcc4220b127.r2.cloudflarestorage.com",
     "access_key": "35f9ace41767c9ba5d4c60d804d0063a",
@@ -1504,21 +1512,94 @@ async def gemini_generate_content(model: str, request: GeminiRequest):
             if "text" in part:
                 prompt += part["text"]
 
-        response = await call_gemini_with_retry(prompt, model=model)
+        # 检测是否是图片模型
+        is_image_model = model in IMAGE_MODELS
 
-        return {
-            "candidates": [{
-                "content": {"parts": [{"text": response.text}], "role": "model"},
-                "finishReason": "STOP",
-                "index": 0
-            }],
-            "usageMetadata": {
-                "promptTokenCount": len(prompt.split()),
-                "candidatesTokenCount": len(response.text.split()),
-                "totalTokenCount": len(prompt.split()) + len(response.text.split())
-            },
-            "modelVersion": model
-        }
+        if is_image_model:
+            # 图片模型: 增强提示词并使用image_mode
+            enhanced_prompt = create_image_prompt(prompt)
+            response = await call_gemini_with_retry(enhanced_prompt, image_mode=True)
+
+            # 处理图片响应
+            parts = []
+            if response.images:
+                for img in response.images:
+                    if hasattr(img, "url") and img.url:
+                        cookies = getattr(img, "cookies", {}) or {}
+                        download_url = img.url
+                        if "=s" not in download_url:
+                            download_url = f"{img.url}=s4096"
+
+                        async with httpx.AsyncClient(follow_redirects=True, cookies=cookies, timeout=60.0) as http_client:
+                            resp = await http_client.get(download_url)
+                            if resp.status_code == 200:
+                                image_bytes = resp.content
+
+                                # 去除水印
+                                if watermark_remover:
+                                    from fastapi.concurrency import run_in_threadpool
+                                    try:
+                                        image_bytes = await run_in_threadpool(
+                                            watermark_remover.remove_from_bytes,
+                                            image_bytes
+                                        )
+                                        logger.info(f"✅ 水印已去除 (Gemini原生格式)")
+                                    except Exception as e:
+                                        logger.warning(f"⚠️ 去水印失败，返回原图: {e}")
+
+                                # 编码为base64
+                                content_type = resp.headers.get("content-type", "image/png")
+                                mime_type = "image/png"
+                                if "jpeg" in content_type or "jpg" in content_type:
+                                    mime_type = "image/jpeg"
+                                elif "webp" in content_type:
+                                    mime_type = "image/webp"
+
+                                image_base64 = b64.b64encode(image_bytes).decode("utf-8")
+                                parts.append({
+                                    "inlineData": {
+                                        "mimeType": mime_type,
+                                        "data": image_base64
+                                    }
+                                })
+
+            # 如果也有文本，添加文本部分
+            if response.text:
+                parts.append({"text": response.text})
+
+            if not parts:
+                raise HTTPException(status_code=400, detail="未能生成图片")
+
+            return {
+                "candidates": [{
+                    "content": {"parts": parts, "role": "model"},
+                    "finishReason": "STOP",
+                    "index": 0
+                }],
+                "usageMetadata": {
+                    "promptTokenCount": len(prompt.split()),
+                    "candidatesTokenCount": 1,
+                    "totalTokenCount": len(prompt.split()) + 1
+                },
+                "modelVersion": model
+            }
+        else:
+            # 文本模型: 原有逻辑
+            response = await call_gemini_with_retry(prompt, model=model)
+
+            return {
+                "candidates": [{
+                    "content": {"parts": [{"text": response.text}], "role": "model"},
+                    "finishReason": "STOP",
+                    "index": 0
+                }],
+                "usageMetadata": {
+                    "promptTokenCount": len(prompt.split()),
+                    "candidatesTokenCount": len(response.text.split()),
+                    "totalTokenCount": len(prompt.split()) + len(response.text.split())
+                },
+                "modelVersion": model
+            }
     except RetryError as e:
         raise HTTPException(status_code=429, detail=f"重试失败: {e}")
     except Exception as e:
